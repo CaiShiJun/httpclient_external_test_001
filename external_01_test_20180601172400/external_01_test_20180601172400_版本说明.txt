@@ -1,0 +1,28 @@
+﻿
+第一点：
+补充了https跨应用的验证
+https访问配置
+ 1.tomcat的conf/server.xml中配置如下：
+    <!--<Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+               maxThreads="150" SSLEnabled="true" scheme="https" secure="true" 
+			   clientAuth="false" sslProtocol="TLS" keystoreFile="d:/tomcat2.keystore" keystorePass="localhost">
+	</Connector>-->
+ 2.在对应的应用的web.xml中配置如下：
+    <!--https的调用-->
+  <security-constraint>
+        <web-resource-collection >
+            <web-resource-name >SSL</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+ 3.注意生成keystoreFile文件
+
+第二点:
+补充了验证HttpClient4空指针的验证(结合browser_java_test的post请求验证，注意修改port)
+
+第三点：
+补充了验证httpclient与urlConnection验证返回一个jsp页面，有flush，无flush三种情况下的跨应用。

@@ -1,0 +1,86 @@
+package com.ningasynchttpclient;
+
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.ning.http.client.AsyncHttpClientConfig;
+import org.apache.http.Header;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClient.BoundRequestBuilder;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.Response;
+
+public class AsyncHttpClientGetServlet extends HttpServlet {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doGet(request, response);
+    }
+
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("text/html;charset=UTF-8");
+        StringBuffer stringBuffer = new StringBuffer();
+        String urlString = null;
+        stringBuffer.append("<html><head><title></title></head><body><h2>AsyncHttpClient</h2>");
+        if (req.getParameter("asynchttpclientGetUrl") == null) {
+            urlString = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + req.getContextPath() + "/test";
+        } else {
+            urlString = (String) req.getParameter("asynchttpclientGetUrl");
+            String queryString = req.getQueryString();
+            urlString = URLDecoder.decode(req.getQueryString().toString().substring(queryString.indexOf("=") + 1), "UTF-8");
+            if (!urlString.contains("http")) {
+                String urlpre = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + req.getContextPath();
+                urlString = urlpre + "/" + urlString;
+            }
+        }
+        stringBuffer.append(new Date()+"<br>"+urlString + "<br>");
+
+        AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
+        configBuilder.setRequestTimeoutInMs(6000000);
+        AsyncHttpClient asyncHttpClient = new AsyncHttpClient(configBuilder.build());
+        BoundRequestBuilder builder = asyncHttpClient.prepareGet(urlString);
+        Future<Response> responseFuture = builder.execute();
+        Response response;
+        try {
+            response = responseFuture.get();
+            int statusCode = response.getStatusCode();
+//		     FluentCaseInsensitiveStringsMap headers = response.getHeaders();
+//		     while(headers.iterator().hasNext()) {
+//		    	 Entry<String, List<String>> entry=headers.iterator().next();
+////		         Header header = (Header) headers.iterator().next();
+//		    	 String key=entry.getKey();
+//		    	 List<String> values=entry.getValue();
+//		         stringBuffer.append(values.get(0)+"<br>");
+//	         }
+//		     stringBuffer.append("responseCode:" + statusCode + "<br>");
+            stringBuffer.append("<br> responseStatusCode:" + statusCode + "<br>");
+
+            if (statusCode == 200) {
+                String responseBody = response.getResponseBody();
+                stringBuffer.append("<br>" + responseBody + "<br>");
+            }
+        } catch (InterruptedException e) {
+            stringBuffer.append("<br> " + e.getMessage() + "<br>");
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            stringBuffer.append("<br> " + e.getMessage() + "<br>");
+            e.printStackTrace();
+        }
+        stringBuffer.append(" </body></html>");
+        resp.getWriter().write(stringBuffer.toString());
+
+    }
+
+}
